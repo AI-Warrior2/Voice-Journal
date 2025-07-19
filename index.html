@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Voice Journal Recorder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { text-align: center; font-family: sans-serif; padding-top: 50px; }
+    button { font-size: 18px; padding: 15px 30px; margin: 10px; }
+    audio { margin-top: 20px; width: 90%; }
+  </style>
+</head>
+<body>
+  <h2>Voice Journal Recorder</h2>
+  <button id="start">Start Recording</button>
+  <button id="stop" disabled>Stop Recording</button>
+  <br>
+  <audio id="audio" controls></audio>
+
+  <script>
+    let mediaRecorder, chunks = [];
+    const startBtn = document.getElementById("start");
+    const stopBtn = document.getElementById("stop");
+    const audioPlayer = document.getElementById("audio");
+    const webhook = "https://hook.us1.make.com/YOUR_WEBHOOK_ID";
+
+    startBtn.onclick = async () => {
+      chunks = [];
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.start();
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+
+      mediaRecorder.ondataavailable = e => chunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        audioPlayer.src = URL.createObjectURL(blob);
+        fetch(webhook, { method: 'POST', body: blob });
+        // (Optional) Show user a "Sent" confirmation
+      };
+    };
+
+    stopBtn.onclick = () => {
+      mediaRecorder.stop();
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    };
+  </script>
+</body>
+</html>
